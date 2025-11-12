@@ -1,3 +1,8 @@
+# Introduction
+## Fishing Vessel Observation Network
+OceanMonitor is a mobile app used to read temperature measurements from ZebraTech deck units. These measurements are recorded by Moana sensors (also ZebraTech).
+The app has been developed by SysReforms International, and is maitained by the OFM-FEMA team.
+
 # Welcome to your Expo app 👋
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
