@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "AquaGraph",
-    "slug": "AquaGraph",
+    "name": "oceanmonitor",
+    "slug": "OceanMonitor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app_icon.png",
-    "scheme": "aquagraph",
+    "scheme": "spc.ofp.oceanmonitor",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.AquaGraph",
+      "bundleIdentifier": "spc.ofp.oceanmonitor",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to connect to the Moana Deck Unit for downloading ocean temperature data.",
         "NSBluetoothPeripheralUsageDescription": "This app requires Bluetooth to communicate with the Moana Deck Unit.",
@@ -26,7 +26,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.AquaGraph",
+      "package": "spc.ofp.oceanmonitor",
       "permissions": [
         "BLUETOOTH",
         "BLUETOOTH_ADMIN",
@@ -55,7 +55,7 @@
         {
           "image": "./assets/images/app_icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#fffff"
+          "backgroundColor": "#ffffff"
         }
       ],
       "expo-sqlite",
@@ -80,8 +80,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5dbc1a82-4bb4-4c34-b916-288f7381eea7"
+        "projectId": "d3fd1c49-bd0c-4219-8b84-8b180ded025e"
       }
-    }
+    },
+    "owner": "marcg_spc"
   }
 }
