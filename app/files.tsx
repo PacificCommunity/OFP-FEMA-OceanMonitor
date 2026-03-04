@@ -271,9 +271,14 @@ const FileListScreen = () => {
 
     const handleFilePress = async (item: any) => {
         try {
-            setNavigating(true);
-            const content = await getFileContent(item.fileName);
-            if (content) {
+          setNavigating(true);
+          const content = await getFileContent(item.fileName);
+
+          // Ajout du check pour le mode Mock
+          const isMock = item.fileName.includes('9999');
+
+          
+            if (content || isMock) {
                 router.push({
                     pathname: '/visualization',
                     params: {
