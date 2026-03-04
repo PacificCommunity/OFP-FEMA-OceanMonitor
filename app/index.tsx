@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 // CHANGED: Added SafeAreaView for better status bar handling
-import { StyleSheet, View, TextInput, Text, Image, TouchableOpacity, Platform, Linking, SafeAreaView, ScrollView } from 'react-native';
+import { AppState, AppStateStatus, StyleSheet, View, TextInput, Text, Image, TouchableOpacity, Platform, Linking, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBLE } from '@/src/context/BLEContext';
 import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
@@ -12,7 +12,6 @@ import TechnicalSupport from './component/TechnicalSupport';
 import * as SplashScreen from 'expo-splash-screen';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as SecureStore from 'expo-secure-store';
-import { AppState, AppStateStatus } from 'react-native';
 
 
 
@@ -296,6 +295,18 @@ export default function HomeScreen() {
     debounce(async () => {
       console.log('handleConnect called');
       if (!serial || state.connecting) return;
+
+      // --- AJOUT DU BYPASS WEB ---
+      if (Platform.OS === 'web') {
+          console.log("🌐 Navigation Web : Bypass des permissions");
+          try {
+              await connect(serial.trim());
+          } catch (error) {
+              console.log('Mock connection error:', error);
+          }
+          return; // On s'arrête ici pour le web
+      }
+      // --- FIN DU BYPASS ---
 
       // Clear any previous errors
       setPermissionError(null);

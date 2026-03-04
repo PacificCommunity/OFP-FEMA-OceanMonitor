@@ -4,10 +4,10 @@ import { BleManager, Device, Subscription, State as BLEPowerState, Characteristi
 import * as SecureStore from 'expo-secure-store';
 import { Buffer } from 'buffer';
 import { HeatshrinkDecoder } from 'heatshrink-ts';
-import { storeFile, getFileContent, getLocalFileNames, getStoredFiles, cleanupOldFiles } from '@/src/service/DataService';
+import { storeFile, getLocalFileNames, getStoredFiles, cleanupOldFiles } from '@/src/service/DataService';
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 
 const VSP_SERVICE_UUID = '569a1101-b87f-490c-92cb-11ba5ea5167c';
@@ -70,7 +70,7 @@ type BLEAction =
     | { type: 'SILENT_STATUS_UPDATE'; payload: string };
 
 const initialState: BLEState = {
-    manager: new BleManager(),
+    manager: Platform.OS !== 'web' ? new BleManager() : (null as any),
     device: null,
     connected: false,
     connecting: false,
@@ -1165,6 +1165,29 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Main connect function
     const connect = async (serial: string, isReconnection = false, isPeriodicReconnect = false) => {
+      // --- AJOUT DU MOCK WEB ---
+      if (Platform.OS === 'web' && serial === '9999') {
+          console.log("🛠️ Mode Mock Web activé pour le serial 9999");
+          dispatch({ type: 'SEARCH_START' });
+          await delay(500);
+          dispatch({ type: 'CONNECT_START' });
+          await delay(500);
+          dispatch({ type: 'AUTH_START' });
+          await delay(500);
+          
+          // On simule un device factice pour l'état
+          const mockDevice = { id: 'MOCK-ID', name: 'DU-9999' } as any;
+          dispatch({ type: 'CONNECT_SUCCESS', payload: mockDevice });
+          
+          // On simule une liste de fichiers mockés
+          const mockFiles = [
+              { fileName: 'MOANA_9999_1_250812020535.csv', size: 1024, timestamp: new Date() }
+          ];
+          dispatch({ type: 'SYNC_SUCCESS', payload: mockFiles });
+          return; 
+      }
+      // --- FIN DU MOCK ---
+
         if (immediateCleanupRef.current) {
             throw new Error('Connection aborted due to logout cleanup');
         }
@@ -2047,6 +2070,8 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, []);
 
     useEffect(() => {
+              // Si on est sur le Web ou que le manager n'existe pas, on ne fait rien
+        if (Platform.OS === 'web' || !state.manager) return;
         subscriptionsRef.current.state = state.manager.onStateChange(async (s: BLEPowerState) => {
             if (s === 'PoweredOn') {
                 const serial = lastConnectedSerialRef.current;
@@ -2253,7 +2278,7 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 };
 
 export const useBLE = (): Ctx => {
-    const ctx = useContext(BLEContext);
-    if (!ctx) throw new Error('useBLE must be used within a BLEProvider');
-    return ctx;
+  const ctx = useContext(BLEContext);
+  if (!ctx) throw new Error('useBLE must be used within a BLEProvider');
+  return ctx;
 }

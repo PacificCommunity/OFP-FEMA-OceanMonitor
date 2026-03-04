@@ -1,19 +1,16 @@
-import React, { useEffect, useState, useMemo, useRef, JSX, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Dimensions, ActivityIndicator, Image, BackHandler, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useMemo, useRef, JSX } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, Dimensions, ActivityIndicator, Image, BackHandler, TouchableOpacity, Animated } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Svg, Rect, Circle, Path, Text as SvgText } from 'react-native-svg';
+import { Svg, Rect, Circle, Path, Text as SvgText, SvgXml } from 'react-native-svg';
 import { pacificLogoSvg } from '@/app/svgContants';
-import { SvgXml } from 'react-native-svg';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { getFileContent, parseCSVContent } from '@/src/service/DataService';
+import { parseCSVContent } from '@/src/service/DataService';
 import CommonHeader from './component/CommonHeader';
 import TechnicalSupport from './component/TechnicalSupport';
 import { useBLE } from '@/src/context/BLEContext';
 import { useFocusEffect } from '@react-navigation/native';
-import { Animated } from 'react-native';
-
 
 interface DataPoint {
     x: number;
@@ -149,7 +146,7 @@ const VisualizationScreen: React.FC = () => {
         };
     }, []);
 
-    const memoizedParams = useMemo(() => ({
+    const memorizedParams = useMemo(() => ({
         fileName: params.fileName as string,
         content: params.content as string
     }), [params.fileName, params.content]);
@@ -354,33 +351,33 @@ const VisualizationScreen: React.FC = () => {
 
         // First pass: create all data points with original indices
         const allProcessedData: DataPoint[] = csvData.data.map((row: any, index: number) => {
-            let temperature = parseFloat(row.temperature || row['Temperature C'] || row.temp);
+            const temperature = parseFloat(row.temperature || row['Temperature C'] || row.temp);
             if (isNaN(temperature)) {
-                temperature = 20;
+              return null;
             }
 
-            let depth = parseFloat(row.depth || row['Depth Decibar'] || row.dep);
+            const depth = parseFloat(row.depth || row['Depth Decibar'] || row.dep);
             if (isNaN(depth)) {
-                depth = index * 10;
+              return null;
             }
 
             let timestamp: number;
             const dateTimeStr = row.dateTime || row['DateTime (UTC)'] || '';
 
             try {
-                if (dateTimeStr.length >= 13) {
-                    const year = dateTimeStr.slice(0, 4);
-                    const month = dateTimeStr.slice(4, 6);
-                    const day = dateTimeStr.slice(6, 8);
-                    const hour = dateTimeStr.slice(9, 11);
-                    const minute = dateTimeStr.slice(11, 13);
-                    const second = dateTimeStr.slice(13, 15) || '00';
-                    timestamp = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`).getTime();
-                } else {
-                    timestamp = Date.now() + (index * 60000);
-                }
-            } catch (e) {
-                timestamp = Date.now() + (index * 60000);
+              if (dateTimeStr.length >= 13) {
+                const year = dateTimeStr.slice(0, 4);
+                const month = dateTimeStr.slice(4, 6);
+                const day = dateTimeStr.slice(6, 8);
+                const hour = dateTimeStr.slice(9, 11);
+                const minute = dateTimeStr.slice(11, 13);
+                const second = dateTimeStr.slice(13, 15) || '00';
+                timestamp = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}Z`).getTime();
+              } else {
+                return null;
+              }
+            } catch {
+              return null;
             }
 
             return {
@@ -393,9 +390,7 @@ const VisualizationScreen: React.FC = () => {
                 color: '#2A3A94',
                 originalIndex: index
             };
-        }).filter((item: DataPoint) => {
-            return !isNaN(item.x) && !isNaN(item.y) && !isNaN(item.value);
-        });
+        }).filter((item: DataPoint | null) => item != null);
 
         console.log(`Total measurements: ${allProcessedData.length}`);
 
@@ -538,20 +533,7 @@ const VisualizationScreen: React.FC = () => {
 
     useEffect(() => {
         const fetchData = async (): Promise<void> => {
-            console.log('=== Starting data fetch process ===');
-            console.log('Params:', memoizedParams);
-
-            try {
-                let csvData: ProcessedCSVData | null = null;
-                let fileName = '';
-
-                if (memoizedParams.fileName && memoizedParams.content) {
-                    console.log('Using data from navigation params');
-                    fileName = memoizedParams.fileName;
-                    csvData = parseCSVContent(memoizedParams.content);
-                } else {
-                    console.log('Using static fallback data');
-                    const staticCSV = `Deck unit serial number,9994
+          const staticCSV = `Deck unit serial number,9994
 Deck unit firmware version,5.27ble
 Deck unit battery voltage,4.14
 Deck unit battery percent,94.0
@@ -574,7 +556,7 @@ Max Lifetime Depth (dBar),100.0
 Baseline(mBar),1067
 DateTime (UTC),Lat,Lon,Depth Decibar,Temperature C
 20250812T020535,-41.259533,+173.283215,7.4,21.611
-20250812T020621,-41.259458,+173.283105,0.3,20.655
+20250812T020621,-41.259458,+173.283105,3,20.655
 20250812T020622,-41.259458,+173.283105,0.6,19.905
 20250812T020623,-41.259458,+173.283105,1.2,20.322
 20250812T020624,-41.259458,+173.283105,2.1,21.455
@@ -596,9 +578,28 @@ DateTime (UTC),Lat,Lon,Depth Decibar,Temperature C
 20250812T020640,-41.259458,+173.283105,20.5,22.567
 20250812T020641,-41.259458,+173.283105,21.7,21.889
 20250812T020642,-41.259458,+173.283105,22.9,20.445
-20250812T020643,-41.259458,+173.283105,24.1,21.223
+20250812T020643,-41.259458,+173.283105,,21.223
 20250812T020644,-41.259458,+173.283105,25.3,22.678
 END`;
+
+            console.log('=== Starting data fetch process ===');
+            console.log('Params:', memorizedParams);
+
+            try {
+                let csvData: ProcessedCSVData | null = null;
+                let fileName = '';
+
+                if (memorizedParams.fileName && memorizedParams.content) {
+                  console.log('Using data from navigation params');
+                  fileName = memorizedParams.fileName;
+                  csvData = parseCSVContent(memorizedParams.content);
+                } else if (currentFileName.includes('9999')) { 
+                  // Cas Mock : On force l'utilisation du staticCSV que tu as corrigé
+                  console.log('Using mock data for sensor 9999');
+                  csvData = parseCSVContent(staticCSV);
+                }
+                else {
+                    console.log('Using static fallback data');
                     fileName = 'MOANA_1350_1_250812020535.csv';
                     csvData = parseCSVContent(staticCSV);
                 }
@@ -622,7 +623,7 @@ END`;
         };
 
         fetchData();
-    }, [memoizedParams]);
+    }, [memorizedParams]);
 
     const formatDateTime = (timestamp: number): string => {
         const date = new Date(timestamp);
@@ -696,15 +697,6 @@ END`;
         }
 
         return labels;
-    };
-
-    const formatDateTimeForTooltip = (timestamp: number): string => {
-        const date = new Date(timestamp);
-        const day = date.getUTCDate();
-        const month = date.getUTCMonth() + 1;
-        const hours = date.getUTCHours().toString().padStart(2, '0');
-        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-        return `${day}/${month} ${hours}:${minutes} UTC`;
     };
 
     const renderVerticalTemperatureGradient = (gradientHeight: number): JSX.Element[] => {
