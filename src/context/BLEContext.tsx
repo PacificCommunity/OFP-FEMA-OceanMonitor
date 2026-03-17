@@ -1,5 +1,5 @@
 // src/context/BLEContext.tsx
-import React, { createContext, useContext, useEffect, useReducer, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import { BleManager, Device, Subscription, State as BLEPowerState, Characteristic } from 'react-native-ble-plx';
 import * as SecureStore from 'expo-secure-store';
 import { Buffer } from 'buffer';
@@ -1166,7 +1166,7 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Main connect function
     const connect = async (serial: string, isReconnection = false, isPeriodicReconnect = false) => {
       // --- AJOUT DU MOCK WEB ---
-      if (Platform.OS === 'web' && serial === '9999') {
+      if (Platform.OS === 'web'|| serial === '9999') {
           console.log("🛠️ Mode Mock Web activé pour le serial 9999");
           dispatch({ type: 'SEARCH_START' });
           await delay(500);
