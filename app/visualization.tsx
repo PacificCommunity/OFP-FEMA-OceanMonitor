@@ -356,7 +356,7 @@ const VisualizationScreen: React.FC = () => {
               return null;
             }
 
-            const depth = parseFloat(row.depth || row['Depth Decibar'] || row.dep);
+            const depth = parseFloat(row.depth ?? row['Depth Decibar'] ?? row.dep);
             if (isNaN(depth)) {
               return null;
             }
@@ -415,25 +415,37 @@ const VisualizationScreen: React.FC = () => {
             sampledData = coloredData;
             console.log(`Showing all ${coloredData.length} measurements (≤30)`);
         } else {
-            // If more than 30 measurements, sample evenly
-            const step = Math.floor(coloredData.length / 30);
-            console.log(`Sampling: showing 1 measurement every ${step} points (${coloredData.length}/30=${step.toFixed(1)})`);
+            // 1. On garde toujours le premier et le dernier
+          const selectedIndices = new Set([0, coloredData.length - 1]);
+          
+          // 2. On calcule l'importance de chaque point intermédiaire
+          const importanceScores = coloredData.map((point, i) => {
+              if (i === 0 || i === coloredData.length - 1) return { index: i, score: Infinity };
+              
+              const prev = coloredData[i - 1];
+              const next = coloredData[i + 1];
+              
+              // Variation de profondeur (pente)
+              const depthDiff = Math.abs(next.y - prev.y);
+              // Variation de température
+              const tempDiff = Math.abs(next.temperature - prev.temperature);
+              
+              return { index: i, score: depthDiff + (tempDiff * 10) }; // On pondère la temp si besoin
+          });
 
-            for (let i = 0; i < coloredData.length; i += step) {
-                sampledData.push(coloredData[i]);
-                if (sampledData.length >= 30) break;
-            }
+          // 3. On trie par score et on prend les 28 meilleurs (pour arriver à 30 avec first/last)
+          const topPoints = importanceScores
+              .filter(s => s.score !== Infinity)
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 28);
 
-            // Always include the last measurement if it's not already included
-            const lastPoint = coloredData[coloredData.length - 1];
-            if (sampledData[sampledData.length - 1].originalIndex !== lastPoint.originalIndex) {
-                if (sampledData.length >= 30) {
-                    sampledData[29] = lastPoint; // Replace the 30th point with the last measurement
-                } else {
-                    sampledData.push(lastPoint);
-                }
-            }
-        }
+          topPoints.forEach(p => selectedIndices.add(p.index));
+
+          // 4. On reconstruit le tableau trié par index pour garder la chronologie
+          sampledData = Array.from(selectedIndices)
+              .sort((a, b) => a - b)
+              .map(idx => coloredData[idx]);
+      }
 
         console.log(`Final display points: ${sampledData.length}`);
         setDisplayData(sampledData);
@@ -533,7 +545,7 @@ const VisualizationScreen: React.FC = () => {
 
     useEffect(() => {
         const fetchData = async (): Promise<void> => {
-          const staticCSV = `Deck unit serial number,9999
+          const staticCSV12 = `Deck unit serial number,9999
 Deck unit firmware version,5.27ble
 Deck unit battery voltage,4.14
 Deck unit battery percent,94.0
@@ -543,8 +555,8 @@ Upload attempts,-
 Upload time,-
 Upload stats,-
 Depth rating (m),500
-Download position,-41.259435,+173.283116
-Download Time,18/03/2026 13:00:00
+Download position,-21.522,+164.8225
+Download Time,12/03/2026 13:00:00
 Download Attempts,1
 Moana Serial Number,1350
 Moana Firmware,MOANA-3.05
@@ -555,68 +567,130 @@ Moana Battery (V),3.59
 Max Lifetime Depth (dBar),300.0
 Baseline(mBar),1013
 DateTime (UTC),Lat,Lon,Depth Decibar,Temperature C
-20260318T090000,-41.2595,173.2832,0.0,27.0
-20260318T090600,-41.2595,173.2832,62.5,25.4
-20260318T091200,-41.2595,173.2832,125.0,23.1
-20260318T091800,-41.2595,173.2832,187.5,21.3
-20260318T092400,-41.2595,173.2832,250.0,19.8
-20260318T093000,-41.2595,173.2832,250.0,19.7
-20260318T093600,-41.2595,173.2832,250.0,19.7
-20260318T094200,-41.2595,173.2832,250.0,19.6
-20260318T094800,-41.2595,173.2832,250.0,19.6
-20260318T095400,-41.2595,173.2832,250.0,19.5
-20260318T100000,-41.2595,173.2832,250.0,19.5
-20260318T100600,-41.2595,173.2832,250.0,19.5
-20260318T101200,-41.2595,173.2832,250.0,19.4
-20260318T101800,-41.2595,173.2832,250.0,19.4
-20260318T102400,-41.2595,173.2832,250.0,19.4
-20260318T103000,-41.2595,173.2832,250.0,19.4
-20260318T103600,-41.2595,173.2832,250.0,19.3
-20260318T104200,-41.2595,173.2832,250.0,19.3
-20260318T104800,-41.2595,173.2832,250.0,19.3
-20260318T105400,-41.2595,173.2832,250.0,19.2
-20260318T110000,-41.2595,173.2832,250.0,19.2
-20260318T110600,-41.2595,173.2832,250.0,19.2
-20260318T111200,-41.2595,173.2832,250.0,19.2
-20260318T111800,-41.2595,173.2832,250.0,19.1
-20260318T112400,-41.2595,173.2832,250.0,19.1
-20260318T113000,-41.2595,173.2832,250.0,19.1
-20260318T113600,-41.2595,173.2832,250.0,19.1
-20260318T114200,-41.2595,173.2832,250.0,19.1
-20260318T114800,-41.2595,173.2832,250.0,19.1
-20260318T115400,-41.2595,173.2832,250.0,19.1
-20260318T120000,-41.2595,173.2832,250.0,19.1
-20260318T120600,-41.2595,173.2832,250.0,19.1
-20260318T121200,-41.2595,173.2832,250.0,19.1
-20260318T121800,-41.2595,173.2832,250.0,19.1
-20260318T123000,-41.2595,173.2832,200.0,21.2
-20260318T123600,-41.2595,173.2832,150.0,22.8
-20260318T124200,-41.2595,173.2832,100.0,24.3
-20260318T124800,-41.2595,173.2832,50.0,25.7
-20260318T125400,-41.2595,173.2832,25.0,26.4
-20260318T130000,-41.2595,173.2832,0.0,27.0
+20260312T090000,-21.522,164.8225,0.0,27.0
+20260312T090600,-21.522,164.8225,62.5,25.4
+20260312T091200,-21.522,164.8225,125.0,23.1
+20260312T091800,-21.522,164.8225,187.5,21.3
+20260312T092400,-21.522,164.8225,250.0,19.8
+20260312T093000,-21.522,164.8225,250.0,19.7
+20260312T093600,-21.522,164.8225,250.0,19.7
+20260312T094200,-21.522,164.8225,250.0,19.6
+20260312T094800,-21.522,164.8225,250.0,19.6
+20260312T095400,-21.522,164.8225,250.0,19.5
+20260312T100000,-21.522,164.8225,250.0,19.5
+20260312T100600,-21.522,164.8225,250.0,19.5
+20260312T101200,-21.522,164.8225,250.0,19.4
+20260312T101800,-21.522,164.8225,250.0,19.4
+20260312T102400,-21.522,164.8225,250.0,19.4
+20260312T103000,-21.522,164.8225,250.0,19.4
+20260312T103600,-21.522,164.8225,250.0,19.3
+20260312T104200,-21.522,164.8225,250.0,19.3
+20260312T104800,-21.522,164.8225,250.0,19.3
+20260312T105400,-21.522,164.8225,250.0,19.2
+20260312T110000,-21.522,164.8225,250.0,19.2
+20260312T110600,-21.522,164.8225,250.0,19.2
+20260312T111200,-21.522,164.8225,250.0,19.2
+20260312T111800,-21.522,164.8225,250.0,19.1
+20260312T112400,-21.522,164.8225,250.0,19.1
+20260312T113000,-21.522,164.8225,250.0,19.1
+20260312T113600,-21.522,164.8225,250.0,19.1
+20260312T114200,-21.522,164.8225,250.0,19.1
+20260312T114800,-21.522,164.8225,250.0,19.1
+20260312T115400,-21.522,164.8225,250.0,19.1
+20260312T120000,-21.522,164.8225,250.0,19.1
+20260312T120600,-21.522,164.8225,250.0,19.1
+20260312T121200,-21.522,164.8225,250.0,19.1
+20260312T121800,-21.522,164.8225,250.0,19.1
+20260312T123000,-21.522,164.8225,200.0,21.2
+20260312T123600,-21.522,164.8225,150.0,22.8
+20260312T124200,-21.522,164.8225,100.0,24.3
+20260312T124800,-21.522,164.8225,50.0,25.7
+20260312T125400,-21.522,164.8225,25.0,26.4
+20260312T130000,-21.522,164.8225,0.0,27.0
+END`;
+
+const staticCSV13 = `Deck unit serial number,9999
+Deck unit firmware version,5.27ble
+Deck unit battery voltage,4.14
+Deck unit battery percent,94.0
+Upload position,-,-
+Upload signal strength,-
+Upload attempts,-
+Upload time,-
+Upload stats,-
+Depth rating (m),500
+Download position,-21.522,+164.8225
+Download Time,12/03/2026 13:00:00
+Download Attempts,1
+Moana Serial Number,1350
+Moana Firmware,MOANA-3.05
+Protocol Version,2
+Moana calibration date,29/05/2025
+Reset Codes, 0x1
+Moana Battery (V),3.59
+Max Lifetime Depth (dBar),300.0
+Baseline(mBar),1013
+DateTime (UTC),Lat,Lon,Depth Decibar,Temperature C
+20260312T062000,-21.522,164.8225,0.0,25.0
+20260312T063300,-21.522,164.8225,80.5,23.2
+20260312T064600,-21.522,164.8225,160.0,21.5
+20260312T065900,-21.522,164.8225,240.5,19.8
+20260312T071200,-21.522,164.8225,320.0,18.0
+20260312T072500,-21.522,164.8225,320.0,18.0
+20260312T073800,-21.522,164.8225,320.0,18.1
+20260312T075100,-21.522,164.8225,320.0,18.1
+20260312T080400,-21.522,164.8225,320.0,18.2
+20260312T081700,-21.522,164.8225,320.0,18.2
+20260312T083000,-21.522,164.8225,320.0,18.2
+20260312T084300,-21.522,164.8225,320.0,18.3
+20260312T085600,-21.522,164.8225,320.0,18.3
+20260312T090900,-21.522,164.8225,320.0,18.3
+20260312T092200,-21.522,164.8225,320.0,18.4
+20260312T093500,-21.522,164.8225,320.0,18.4
+20260312T094800,-21.522,164.8225,320.0,18.4
+20260312T100100,-21.522,164.8225,320.0,18.5
+20260312T101400,-21.522,164.8225,320.0,18.5
+20260312T102700,-21.522,164.8225,320.0,18.5
+20260312T104000,-21.522,164.8225,320.0,18.5
+20260312T105300,-21.522,164.8225,320.0,18.6
+20260312T110600,-21.522,164.8225,320.0,18.6
+20260312T111900,-21.522,164.8225,240.0,19.8
+20260312T113200,-21.522,164.8225,160.0,21.5
+20260312T114500,-21.522,164.8225,80.0,23.2
+20260312T115800,-21.522,164.8225,20.0,24.5
+20260312T122000,-21.522,164.8225,0.0,25.0
 END`;
 
             console.log('=== Starting data fetch process ===');
             console.log('Params:', memorizedParams);
 
             try {
+              debugger;
                 let csvData: ProcessedCSVData | null = null;
-                let fileName = '';
+                let fileName = memorizedParams.fileName;;
 
                 if (memorizedParams.fileName && memorizedParams.content) {
                   console.log('Using data from navigation params');
                   fileName = memorizedParams.fileName;
                   csvData = parseCSVContent(memorizedParams.content);
-                } else if (currentFileName.includes('9999')) { 
+                } else if (fileName.includes('9999')) { 
+                  debugger;
                   // Cas Mock : On force l'utilisation du staticCSV que tu as corrigé
                   console.log('Using mock data for sensor 9999');
-                  csvData = parseCSVContent(staticCSV);
+                  if (fileName.includes('20260312')) {
+                    csvData = parseCSVContent(staticCSV12);
+                  }
+                  else if (fileName.includes('20260313')) {
+                    csvData = parseCSVContent(staticCSV13);
+                  }
+                  else {
+                    csvData = parseCSVContent(staticCSV12);
+                  }
                 }
                 else {
                     console.log('Using static fallback data');
                     fileName = 'MOANA_1350_1_250812020535.csv';
-                    csvData = parseCSVContent(staticCSV);
+                    csvData = parseCSVContent(staticCSV12);
                 }
 
                 console.log('=== Parsed CSV Data ===');
@@ -1289,9 +1363,9 @@ END`;
 
                             {/* X-axis labels with equal spacing */}
                             {displayData.length > 0 && (() => {
-                                const maxLabels = isLandscapeMode ? 8 : 4;
+                                const maxLabels = isLandscapeMode ? 10 : 6;
                                 const labelInterval = Math.max(1, Math.floor(displayData.length / maxLabels));
-                                const minLabelDistance = isLandscapeMode ? 80 : 60; // Minimum pixels between labels
+                                const minLabelDistance = isLandscapeMode ? 70 : 30; // Minimum pixels between labels
 
                                 // Generate initial label positions
                                 const potentialLabels = [];

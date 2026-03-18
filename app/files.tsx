@@ -135,17 +135,31 @@ const FileListScreen = () => {
 
 
     const handleStartConnection = async (): Promise<void> => {
-        if (canStartConnection()) {
-            const bluetoothState = await state.manager.state();
-            if (bluetoothState !== 'PoweredOn') {
-                setErrorMessage('Bluetooth is not enabled. Please turn it on in Settings.');
-                setShowErrorPopup(true);
-                return;
-            }
+      // Si on a un fichier Mock sélectionné ou si on veut forcer le test
+    if (lastConnectedDevice === '9999' || state?.device?.name?.includes('9999')) {
+        console.log('=== Mocking BLE Data Update ===');
+        setIsRefreshing(true);
+        
+        // On simule un délai de lecture Bluetooth
+        setTimeout(async () => {
+            await loadStoredFiles(); // Recharge la liste
+            setIsRefreshing(false);
+            Alert.alert("Sync Complete", "Mock data for Sensor #9999 has been updated.");
+        }, 1500);
+        return;
+    }
 
-            forceStartPeriodicReconnect();
-            // Don't manually set isRefreshing here - let useEffect handle it
-        }
+      if (canStartConnection()) {
+          const bluetoothState = await state.manager.state();
+          if (bluetoothState !== 'PoweredOn') {
+              setErrorMessage('Bluetooth is not enabled. Please turn it on in Settings.');
+              setShowErrorPopup(true);
+              return;
+          }
+
+          forceStartPeriodicReconnect();
+          // Don't manually set isRefreshing here - let useEffect handle it
+      }
     };
 
     const handleErrorPopupButtonPress = (): void => {
