@@ -1,5 +1,5 @@
 // src/context/BLEContext.tsx
-import React, { createContext, useContext, useEffect, useReducer, useRef } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useReducer, useRef, useState } from 'react';
 import { BleManager, Device, Subscription, State as BLEPowerState, Characteristic } from 'react-native-ble-plx';
 import * as SecureStore from 'expo-secure-store';
 import { Buffer } from 'buffer';
@@ -1166,7 +1166,7 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Main connect function
     const connect = async (serial: string, isReconnection = false, isPeriodicReconnect = false) => {
       // --- AJOUT DU MOCK WEB ---
-      if (Platform.OS === 'web' && serial === '9999') {
+      if (Platform.OS === 'web'|| serial === '9999') {
           console.log("🛠️ Mode Mock Web activé pour le serial 9999");
           dispatch({ type: 'SEARCH_START' });
           await delay(500);
@@ -1181,7 +1181,8 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           
           // On simule une liste de fichiers mockés
           const mockFiles = [
-              { fileName: 'MOANA_9999_1_250812020535.csv', size: 1024, timestamp: new Date() }
+              { fileName: 'MOANA_9999_1_20260312250812.csv', size: 1819, timestamp: new Date(2026, 2, 12, 5, 42) },
+              { fileName: 'MOANA_9999_2_20260313250812.csv', size: 4096, timestamp: new Date(2026, 2, 13, 6, 20) }
           ];
           dispatch({ type: 'SYNC_SUCCESS', payload: mockFiles });
           return; 
@@ -1821,23 +1822,24 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const refreshFiles = async (): Promise<void> => {
+      debugger;
         if (!state.connected || !state.device) {
-            throw new Error('Not connected to device');
+          throw new Error('Not connected to device');
         }
 
         if (state.syncingFiles) {
-            console.log('File sync already in progress, skipping...');
-            return;
+          console.log('File sync already in progress, skipping...');
+          return;
         }
 
         dispatch({ type: 'SYNC_START' });
         try {
-            const files = await downloadFiles(state.device);
-            dispatch({ type: 'SYNC_SUCCESS', payload: files || [] });
+          const files = await downloadFiles(state.device);
+          dispatch({ type: 'SYNC_SUCCESS', payload: files || [] });
         } catch (error: any) {
-            console.log('File sync failed:', error);
-            dispatch({ type: 'SYNC_ERROR', payload: error.message });
-            throw error;
+          console.log('File sync failed:', error);
+          dispatch({ type: 'SYNC_ERROR', payload: error.message });
+          throw error;
         }
     };
 

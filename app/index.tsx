@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 // CHANGED: Added SafeAreaView for better status bar handling
-import { AppState, AppStateStatus, StyleSheet, View, TextInput, Text, Image, TouchableOpacity, Platform, Linking, SafeAreaView, ScrollView } from 'react-native';
+import { AppState, AppStateStatus, StyleSheet, View, TextInput, Text, Image, TouchableOpacity, Platform, Linking, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useBLE } from '@/src/context/BLEContext';
 import { request, PERMISSIONS, RESULTS, check } from 'react-native-permissions';
@@ -12,8 +12,6 @@ import TechnicalSupport from './component/TechnicalSupport';
 import * as SplashScreen from 'expo-splash-screen';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as SecureStore from 'expo-secure-store';
-
-
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,7 +26,7 @@ export default function HomeScreen() {
   const [hasSavedSerial, setHasSavedSerial] = useState<boolean | null>(null);
   const [bluetoothStateSubscription, setBluetoothStateSubscription] = useState<any>(null);
   const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState);
-
+  const [logoClicks, setLogoClicks] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 3000);
@@ -291,14 +289,16 @@ export default function HomeScreen() {
       return { hasPermission: false, permissionType: 'bluetooth' };
     }
   };
+
   const handleConnect = useCallback(
     debounce(async () => {
       console.log('handleConnect called');
       if (!serial || state.connecting) return;
 
       // --- AJOUT DU BYPASS WEB ---
-      if (Platform.OS === 'web') {
-          console.log("🌐 Navigation Web : Bypass des permissions");
+      const isDemo = /*Platform.OS === 'web' ||*/ serial === '9999' 
+      if (isDemo) {
+          Alert.alert("🚀 Mode Démo activé (Web ou Serial 9999)");
           try {
               await connect(serial.trim());
           } catch (error) {
@@ -361,10 +361,6 @@ export default function HomeScreen() {
     }, 1000, { leading: true, trailing: false }),
     [serial, state.connecting, state.manager, connect]
   );
-  // const handleConnect = () => {
-  //   console.log('Navigating to files screen');
-  //   router.push('/files');
-  // };
 
   const handleSupportToggle = (isVisible: boolean) => {
     setSupportVisible(isVisible);
