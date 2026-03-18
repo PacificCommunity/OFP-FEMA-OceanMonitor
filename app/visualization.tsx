@@ -665,7 +665,6 @@ END`;
             console.log('Params:', memorizedParams);
 
             try {
-              debugger;
                 let csvData: ProcessedCSVData | null = null;
                 let fileName = memorizedParams.fileName;;
 
@@ -674,7 +673,6 @@ END`;
                   fileName = memorizedParams.fileName;
                   csvData = parseCSVContent(memorizedParams.content);
                 } else if (fileName.includes('9999')) { 
-                  debugger;
                   // Cas Mock : On force l'utilisation du staticCSV que tu as corrigé
                   console.log('Using mock data for sensor 9999');
                   if (fileName.includes('20260312')) {

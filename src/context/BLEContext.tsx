@@ -1822,7 +1822,6 @@ export const BLEProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const refreshFiles = async (): Promise<void> => {
-      debugger;
         if (!state.connected || !state.device) {
           throw new Error('Not connected to device');
         }
